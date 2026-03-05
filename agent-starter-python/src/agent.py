@@ -1,4 +1,5 @@
 import logging
+import os
 
 from dotenv import load_dotenv
 from livekit import rtc
@@ -12,7 +13,7 @@ from livekit.agents import (
     inference,
     room_io,
 )
-from livekit.plugins import noise_cancellation, silero
+from livekit.plugins import noise_cancellation, silero, liveavatar
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 logger = logging.getLogger("agent")
@@ -57,7 +58,7 @@ def prewarm(proc: JobProcess):
 server.setup_fnc = prewarm
 
 
-@server.rtc_session(agent_name="my-agent")
+@server.rtc_session(agent_name="liveavatar")
 async def my_agent(ctx: JobContext):
     # Logging setup
     # Add any other context you want in all log entries here
@@ -104,6 +105,20 @@ async def my_agent(ctx: JobContext):
     # )
     # # Start the avatar and wait for it to join
     # await avatar.start(session, room=ctx.room)
+
+    avatar = liveavatar.AvatarSession(
+        avatar_id= os.environ["LIVEAVATAR_AVATAR_ID"],
+    )
+
+    # Start Avatar
+    logger.info(f"Starting avatar session with liveavatar")
+    try:
+        logger.info("[Avatar] Starting avatar session...")
+        await avatar.start(session, room=ctx.room)
+        logger.info("[Avatar] Avatar started successfully")
+    except Exception as e:
+        logger.exception(f"[Avatar] Avatar start failed with exception: {e}")
+        raise
 
     # Start the session, which initializes the voice pipeline and warms up the models
     await session.start(
